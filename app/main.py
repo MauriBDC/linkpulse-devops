@@ -1,17 +1,19 @@
-from contextlib import asynccontextmanager
-from datetime import datetime, timezone
 import secrets
 import string
+from contextlib import asynccontextmanager
+from datetime import datetime, timezone
+from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.responses import RedirectResponse
-from pydantic import BaseModel, HttpUrl, ConfigDict
+from pydantic import BaseModel, ConfigDict, HttpUrl
 from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from app.database import Base, engine, get_db
 from app.models import Link
 
+DbSession = Annotated[Session, Depends(get_db)]
 
 ALPHABET = string.ascii_letters + string.digits
 
@@ -55,7 +57,7 @@ def liveness():
 
 
 @app.get("/health/ready", tags=["health"])
-def readiness(db: Session = Depends(get_db)):
+def readiness(db: DbSession):
     try:
         db.execute(text("SELECT 1"))
     except Exception as exc:
@@ -67,8 +69,10 @@ def readiness(db: Session = Depends(get_db)):
     return {"status": "ready"}
 
 
-@app.post("/links", response_model=LinkResponse, status_code=status.HTTP_201_CREATED, tags=["links"])
-def create_link(payload: LinkCreate, db: Session = Depends(get_db)):
+@app.post(
+    "/links", response_model=LinkResponse, status_code=status.HTTP_201_CREATED, tags=["links"]
+)
+def create_link(payload: LinkCreate, db: DbSession):
     for _ in range(5):
         short_code = generate_short_code()
         existing = db.scalar(select(Link).where(Link.short_code == short_code))
@@ -91,7 +95,7 @@ def create_link(payload: LinkCreate, db: Session = Depends(get_db)):
 
 
 @app.get("/links/{short_code}/stats", response_model=LinkResponse, tags=["links"])
-def link_stats(short_code: str, db: Session = Depends(get_db)):
+def link_stats(short_code: str, db: DbSession):
     link = db.scalar(select(Link).where(Link.short_code == short_code))
     if link is None:
         raise HTTPException(status_code=404, detail="link not found")
@@ -99,7 +103,7 @@ def link_stats(short_code: str, db: Session = Depends(get_db)):
 
 
 @app.get("/{short_code}", include_in_schema=False)
-def redirect(short_code: str, db: Session = Depends(get_db)):
+def redirect(short_code: str, db: DbSession):
     link = db.scalar(select(Link).where(Link.short_code == short_code))
     if link is None:
         raise HTTPException(status_code=404, detail="link not found")
