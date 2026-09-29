@@ -35,10 +35,12 @@ Requirements:
 - Docker
 - Docker Compose
 
-Start the stack:
+Start the database, apply migrations, and start the API:
 
 ```bash
-docker compose up --build -d
+docker compose up -d db
+docker compose run --build --rm api alembic upgrade head
+docker compose up --build -d api
 ```
 
 Check container status:
@@ -104,7 +106,7 @@ With Python installed locally:
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 pytest -q
 ```
 
@@ -113,7 +115,7 @@ On Windows PowerShell:
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 pytest -q
 ```
 
@@ -129,7 +131,7 @@ pytest -q
 - [x] CI
 
 ### v0.2 — Application maturity
-- [ ] Alembic migrations
+- [x] Alembic migrations
 - [ ] Structured logging
 - [ ] Coverage gate
 - [ ] Linting
