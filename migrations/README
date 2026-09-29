@@ -1,0 +1,36 @@
+LinkPulse database migrations
+============================
+
+The application never creates or updates the schema on startup. Apply migrations
+explicitly before serving requests. Alembic uses DATABASE_URL from app.database,
+including its local PostgreSQL default, and loads all tables from app.models.
+
+With application dependencies installed and PostgreSQL running:
+
+    export DATABASE_URL='postgresql+psycopg://linkpulse:linkpulse@localhost:5432/linkpulse'
+    alembic upgrade head
+    alembic current
+
+For an isolated SQLite database:
+
+    DATABASE_URL=sqlite+pysqlite:////tmp/linkpulse.db alembic upgrade head
+
+To generate future migrations after changing models:
+
+    alembic revision --autogenerate -m "describe the schema change"
+
+Review generated migrations before applying them. Check schema drift with:
+
+    alembic check
+
+The initial migration creates links and its unique short_code index. clicks and
+created_at retain their SQLAlchemy Python defaults; no server defaults are added.
+
+On a disposable database, undo the initial migration with:
+
+    alembic downgrade base
+
+This drops links and its data. For an existing database created by the old
+application, verify that its schema exactly matches revision 0001 before using
+`alembic stamp 0001` to record that baseline without recreating tables. Stamping
+only records the version; it does not validate or modify the existing schema.

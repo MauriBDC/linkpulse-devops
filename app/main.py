@@ -1,6 +1,5 @@
 import secrets
 import string
-from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Annotated
 
@@ -10,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, HttpUrl
 from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
-from app.database import Base, engine, get_db
+from app.database import get_db
 from app.models import Link
 
 DbSession = Annotated[Session, Depends(get_db)]
@@ -22,18 +21,10 @@ def generate_short_code(length: int = 7) -> str:
     return "".join(secrets.choice(ALPHABET) for _ in range(length))
 
 
-@asynccontextmanager
-async def lifespan(_: FastAPI):
-    # MVP only. Replace with Alembic migrations in the next project stage.
-    Base.metadata.create_all(bind=engine)
-    yield
-
-
 app = FastAPI(
     title="LinkPulse API",
     version="0.1.0",
     description="URL shortener used as a production-style DevOps workload.",
-    lifespan=lifespan,
 )
 
 
