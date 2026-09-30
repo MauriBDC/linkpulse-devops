@@ -1,3 +1,4 @@
+import logging
 import secrets
 import string
 from datetime import datetime, timezone
@@ -9,8 +10,12 @@ from pydantic import BaseModel, ConfigDict, HttpUrl
 from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.database import get_db
 from app.models import Link
+
+settings = get_settings()
+logging.basicConfig(level=settings.LOG_LEVEL)
 
 DbSession = Annotated[Session, Depends(get_db)]
 
@@ -22,7 +27,7 @@ def generate_short_code(length: int = 7) -> str:
 
 
 app = FastAPI(
-    title="LinkPulse API",
+    title=settings.APP_NAME,
     version="0.1.0",
     description="URL shortener used as a production-style DevOps workload.",
 )

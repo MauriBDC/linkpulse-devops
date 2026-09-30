@@ -1,6 +1,7 @@
 import os
 
 os.environ["DATABASE_URL"] = "sqlite+pysqlite:///./test_linkpulse.db"
+os.environ["APP_ENV"] = "test"
 
 import pytest
 from fastapi.testclient import TestClient
