@@ -35,6 +35,16 @@ Requirements:
 - Docker
 - Docker Compose
 
+Create the local configuration and edit its example values as needed:
+
+```bash
+cp .env.example .env
+```
+
+If reusing an existing PostgreSQL volume, set `POSTGRES_PASSWORD` and the password
+in `DATABASE_URL` to the credentials already stored in that database. Changing
+these variables does not change credentials in an initialized volume.
+
 Start the database, apply migrations, and start the API:
 
 ```bash
@@ -65,6 +75,42 @@ Interactive API documentation:
 
 ```text
 http://localhost:8000/docs
+```
+
+## Application configuration
+
+Settings live in `app/core/config.py` and are shared by the API and Alembic.
+They read `.env` from the current working directory; run commands from the
+repository root. Process environment variables override `.env` values.
+Settings are cached per process, so restart the API after changing them.
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `APP_NAME` | `LinkPulse API` | FastAPI application title |
+| `APP_ENV` | `development` | `development`, `test`, or `production` |
+| `DATABASE_URL` | Required | SQLAlchemy connection URL; no credential fallback |
+| `LOG_LEVEL` | `INFO` | Application logging: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL` |
+
+`LOG_LEVEL` configures Python application logging. Uvicorn's own access/server
+logs can be configured with its `--log-level` option; Alembic keeps its logging
+configuration in `alembic.ini`.
+
+Compose passes the application variables explicitly and uses `POSTGRES_DB`,
+`POSTGRES_USER`, and `POSTGRES_PASSWORD` to initialize PostgreSQL. Keep these
+values consistent with `DATABASE_URL`. The example URL uses the Compose service
+hostname `db`. For Python running outside Docker, use a reachable database host
+and port; the Compose database does not publish a host port by default.
+
+For production, inject `APP_ENV=production` and the other variables through the
+runtime environment. `.env.example` contains examples only; `.env` is ignored
+by Git and excluded from Docker builds. Tests set `APP_ENV=test` and an isolated
+SQLite URL, so they do not need PostgreSQL or a local `.env`.
+
+Both migration modes use the same settings:
+
+```bash
+alembic upgrade head
+alembic upgrade head --sql
 ```
 
 ## Create a short URL
@@ -107,7 +153,8 @@ With Python installed locally:
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements-dev.txt
-pytest -q
+ruff check app tests migrations
+pytest
 ```
 
 On Windows PowerShell:
@@ -116,7 +163,8 @@ On Windows PowerShell:
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements-dev.txt
-pytest -q
+ruff check app tests migrations
+pytest
 ```
 
 ## Repository roadmap

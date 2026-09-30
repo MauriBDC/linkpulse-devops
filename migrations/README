@@ -2,12 +2,14 @@ LinkPulse database migrations
 ============================
 
 The application never creates or updates the schema on startup. Apply migrations
-explicitly before serving requests. Alembic uses DATABASE_URL from app.database,
-including its local PostgreSQL default, and loads all tables from app.models.
+explicitly before serving requests. Alembic uses the required DATABASE_URL from
+app.core.config (environment or .env), with no default connection URL, and loads
+all tables from app.models.
 
 With application dependencies installed and PostgreSQL running:
 
-    export DATABASE_URL='postgresql+psycopg://linkpulse:linkpulse@localhost:5432/linkpulse'
+    # Example only; replace with your database credentials.
+    export DATABASE_URL='postgresql+psycopg://example:example@localhost:5432/linkpulse'
     alembic upgrade head
     alembic current
 
